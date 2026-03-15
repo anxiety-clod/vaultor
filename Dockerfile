@@ -7,4 +7,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-CMD ["python", "bot11.py"]   # ИМЕННО ТАК, как у тебя называется файл!
+CMD ["python", "bot11.py"]
