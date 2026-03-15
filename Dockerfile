@@ -7,6 +7,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-RUN ls -la && pwd && which python
+RUN pwd && ls -la
 
-CMD ["python", "bot11.py"]
+ENTRYPOINT ["python", "bot11.py"]
