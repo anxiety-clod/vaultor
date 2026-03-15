@@ -1036,7 +1036,7 @@ async def callbacks(client, call):
     except Exception as e:
         print(f"Ошибка: {e}")
 
-# ================= ОЧИСТКА =================
+# ================= ОЧИСТКА ================
 async def cleanup_old_payments():
     current_time = time.time()
     expired = [rid for rid, req in app.replenish_requests.items() 
@@ -1046,13 +1046,12 @@ async def cleanup_old_payments():
     return len(expired)
 
 # ================= ЗАПУСК =================
-if __name__ == "__main__":
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
+if name == "__main__":
+    import asyncio
     
-    try:
-        loop.run_until_complete(init_db_pool())
-        loop.run_until_complete(init_db())
+    async def main():
+        await init_db_pool()
+        await init_db()
         
         print("="*60)
         print("🚀 БОТ VAULTOR ЗАПУЩЕН")
@@ -1062,7 +1061,10 @@ if __name__ == "__main__":
         print("✅ Карты РФ: активны")
         print("="*60)
         
-        app.run()
+        await app.run()
+    
+    try:
+        asyncio.run(main())
     except KeyboardInterrupt:
         print("\n❌ Бот остановлен")
     except Exception as e:
