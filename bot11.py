@@ -12,7 +12,7 @@ from pyrogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMa
 from pyrogram.enums import ParseMode
 from dotenv import load_dotenv
 
-# ================= HEALTH CHECK SERVER =================
+# ================= HEALTH CHECK SERVER (в отдельном потоке) =================
 class HealthHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -29,8 +29,9 @@ def run_health_server():
     except Exception as e:
         print(f"❌ Health server error: {e}")
 
-# Запускаем health-сервер в отдельном потоке
-threading.Thread(target=run_health_server, daemon=True).start()
+# Запускаем health-сервер ДО инициализации бота
+health_thread = threading.Thread(target=run_health_server, daemon=True)
+health_thread.start()
 time.sleep(1)
 
 # ================= LOAD ENV =================
