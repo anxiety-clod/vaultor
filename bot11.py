@@ -7,10 +7,11 @@ import time
 import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from datetime import datetime
-from pyrogram import Client, filters
+from pyrogram import Client, filters, idle
 from pyrogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram.enums import ParseMode
 from dotenv import load_dotenv
+from aiohttp import web
 
 # ================= HEALTH CHECK SERVER (в отдельном потоке) =================
 class HealthHandler(BaseHTTPRequestHandler):
@@ -29,7 +30,7 @@ def run_health_server():
     except Exception as e:
         print(f"❌ Health server error: {e}")
 
-# Запускаем health-сервер ДО инициализации бота
+# Запускаем health-сервер ДО инициализации бота (оставил для обратной совместимости)
 health_thread = threading.Thread(target=run_health_server, daemon=True)
 health_thread.start()
 time.sleep(1)
@@ -1036,7 +1037,7 @@ async def callbacks(client, call):
     except Exception as e:
         print(f"Ошибка: {e}")
 
-# ================= ОЧИСТКА ================
+# ================= ОЧИСТКА =================
 async def cleanup_old_payments():
     current_time = time.time()
     expired = [rid for rid, req in app.replenish_requests.items() 
@@ -1045,11 +1046,26 @@ async def cleanup_old_payments():
         del app.replenish_requests[rid]
     return len(expired)
 
-# ================= ЗАПУСК =================
-if name == "__main__":
-    import asyncio
-    
-    async def main():
+# ================= ЗАПУСК (Render/async-совместимый) =================
+async def handle_health(request):
+    return web.Response(text="OK", status=200)
+
+async def start_health_server_async():
+    app_web = web.Application()
+    app_web.router.add_get('/', handle_health)
+    runner = web.AppRunner(app_web)
+    await runner.setup()
+    port = int(os.getenv('PORT', '10000'))
+    site = web.TCPSite(runner, '0.0.0.0', port)
+    await site.start()
+    print(f"✅ Health server started on port {port} (async)")
+
+async def main():
+    try:
+        # Запускаем async health-server (в том же event loop)
+        await start_health_server_async()
+
+        # Инициализируем БД и таблицы
         await init_db_pool()
         await init_db()
         
@@ -1057,15 +1073,33 @@ if name == "__main__":
         print("🚀 БОТ VAULTOR ЗАПУЩЕН")
         print("="*60)
         print("✅ PostgreSQL подключен")
-        print("✅ Health server on port 10000")
+        print("✅ Health server on port", os.getenv('PORT', '10000'))
         print("✅ Карты РФ: активны")
         print("="*60)
         
-        await app.run()
-    
-    try:
-        asyncio.run(main())
+        # Запускаем Pyrogram в текущем loop
+        await app.start()
+        print("✅ Pyrogram клиент запущен")
+        
+        # Держим бота активным (idle / ожидание прерывания)
+        await idle()
+        
+    except asyncio.CancelledError:
+        pass
     except KeyboardInterrupt:
         print("\n❌ Бот остановлен")
     except Exception as e:
         print(f"❌ Ошибка запуска: {e}")
+    finally:
+        try:
+            await app.stop()
+        except Exception:
+            pass
+
+if __name__ == "__main__":
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print("\n❌ Бот остановлен вручную")
+    except Exception as e:
+        print(f"❌ Критическая ошибка: {e}")
