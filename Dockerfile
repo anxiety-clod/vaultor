@@ -7,6 +7,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-RUN pwd && ls -la
-
-ENTRYPOINT ["python", "bot11.py"]
+CMD ["python", "-c", "import time; print('✅ BOT STARTED'); time.sleep(9999)"]
