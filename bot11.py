@@ -60,6 +60,7 @@ app = Client(
     bot_token=BOT_TOKEN, 
     workers=100,
     max_concurrent_transmissions=50
+    verbose=True
 )
 
 user_states = {}
