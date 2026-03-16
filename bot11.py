@@ -1048,8 +1048,13 @@ async def cleanup_old_payments():
     return len(expired)
 
 # ================= ЗАПУСК =================
-if __name__ == "__main__":
+if name == "__main__":
     import asyncio
+    import sys
+    
+    # Для Windows
+    if sys.platform == "win32":
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     
     async def main():
         await init_db_pool()
@@ -1063,7 +1068,13 @@ if __name__ == "__main__":
         print("✅ Карты РФ: активны")
         print("="*60)
         
-        await app.run()
+        # Запускаем бота
+        await app.start()
+        print("✅ Бот подключен к Telegram")
+        
+        # Держим бота запущенным
+        while True:
+            await asyncio.sleep(3600)  # спим час
     
     try:
         asyncio.run(main())
