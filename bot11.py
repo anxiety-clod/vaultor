@@ -1048,7 +1048,7 @@ async def cleanup_old_payments():
     return len(expired)
 
 # ================= ЗАПУСК =================
-if __name__ == "__main__":
+if name == "__main__":
     import asyncio
     
     async def main():
