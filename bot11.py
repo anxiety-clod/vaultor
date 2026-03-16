@@ -59,7 +59,8 @@ app = Client(
     api_hash=API_HASH, 
     bot_token=BOT_TOKEN, 
     workers=100,
-    max_concurrent_transmissions=50
+    max_concurrent_transmissions=50,
+    sleep_threshold=30
 )
 
 user_states = {}
@@ -1044,13 +1045,14 @@ async def cleanup_old_payments():
     expired = [rid for rid, req in app.replenish_requests.items() 
                if current_time - req.get("timestamp", 0) > 86400]
     for rid in expired:
-        del app.replenish_requests[rid]
+        del app.replenish_requests[request_id]
     return len(expired)
 
 # ================= ЗАПУСК =================
 if __name__ == "__main__":
     import asyncio
     import sys
+    import requests
 
     # Для Windows
     if sys.platform == "win32":
@@ -1059,23 +1061,30 @@ if __name__ == "__main__":
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 
+    # Подключаем БД
+    loop.run_until_complete(init_db_pool())
+    loop.run_until_complete(init_db())
+
+    print("="*60)
+    print("🚀 БОТ VAULTOR ЗАПУЩЕН")
+    print("="*60)
+    print("✅ PostgreSQL подключен")
+    print("✅ Health server on port 10000")
+    print("✅ Карты РФ: активны")
+    print("="*60)
+
+    # Проверка доступности Telegram API
     try:
-        loop.run_until_complete(init_db_pool())
-        loop.run_until_complete(init_db())
-        
-        print("="*60)
-        print("🚀 БОТ VAULTOR ЗАПУЩЕН")
-        print("="*60)
-        print("✅ PostgreSQL подключен")
-        print("✅ Health server on port 10000")
-        print("✅ Карты РФ: активны")
-        print("="*60)
-        
-        # Запускаем бота
-        app.run()
-    except KeyboardInterrupt:
-        print("\n❌ Бот остановлен")
+        url = f"https://api.telegram.org/bot{BOT_TOKEN}/getMe"
+        r = requests.get(url, timeout=10)
+        if r.status_code == 200:
+            print("✅ Telegram API доступен")
+            print(f"✅ Бот: @{r.json()['result']['username']}")
+        else:
+            print(f"❌ Telegram API вернул код {r.status_code}")
     except Exception as e:
-        print(f"❌ Ошибка запуска: {e}")
-    finally:
-        loop.close()
+        print(f"❌ Ошибка подключения к Telegram API: {e}")
+
+    # Запуск бота
+    print("🔄 Запускаем бота...")
+    app.run()
