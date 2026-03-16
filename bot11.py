@@ -1051,14 +1051,17 @@ async def cleanup_old_payments():
 if name == "__main__":
     import asyncio
     import sys
-    
+
     # Для Windows
     if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-    
-    async def main():
-        await init_db_pool()
-        await init_db()
+
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
+    try:
+        loop.run_until_complete(init_db_pool())
+        loop.run_until_complete(init_db())
         
         print("="*60)
         print("🚀 БОТ VAULTOR ЗАПУЩЕН")
@@ -1069,16 +1072,10 @@ if name == "__main__":
         print("="*60)
         
         # Запускаем бота
-        await app.start()
-        print("✅ Бот подключен к Telegram")
-        
-        # Держим бота запущенным
-        while True:
-            await asyncio.sleep(3600)  # спим час
-    
-    try:
-        asyncio.run(main())
+        app.run()
     except KeyboardInterrupt:
         print("\n❌ Бот остановлен")
     except Exception as e:
         print(f"❌ Ошибка запуска: {e}")
+    finally:
+        loop.close()
