@@ -59,7 +59,7 @@ app = Client(
     api_hash=API_HASH, 
     bot_token=BOT_TOKEN, 
     workers=100,
-    max_concurrent_transmissions=50
+    max_concurrent_transmissions=50,
     verbose=True
 )
 
